@@ -7,11 +7,11 @@ use tokio::runtime::{Builder, Runtime};
 use tokio_util::task::TaskTracker;
 
 pub const DEFAULT_WORKER_THREADS: u16 = 1;
-pub const DEFAULT_GRACEFUL_SHUTDOWN_TIMEOUT: u32 = 20;
+pub const DEFAULT_CONNECTION_TIMEOUT: u32 = 20;
 
 static mut RUN_TIME: MaybeUninit<Runtime> = MaybeUninit::uninit();
 static mut TASK_TRACKER: MaybeUninit<TaskTracker> = MaybeUninit::uninit();
-static mut SHUTDOWN_TIMEOUT: u32 = DEFAULT_GRACEFUL_SHUTDOWN_TIMEOUT;
+static mut SHUTDOWN_TIMEOUT: u32 = DEFAULT_CONNECTION_TIMEOUT;
 
 pub(super) fn load(l: lua::State) {
     let worker_threads = get_max_worker_threads(l);
@@ -111,11 +111,11 @@ fn get_max_worker_threads(l: lua::State) -> u16 {
 }
 
 fn get_graceful_shutdown_timeout(l: lua::State) -> u32 {
-    let mut timeout = DEFAULT_GRACEFUL_SHUTDOWN_TIMEOUT;
+    let mut timeout = DEFAULT_CONNECTION_TIMEOUT;
 
     l.get_global(c"CreateConVar");
     let success = l.pcall_ignore(|| {
-        l.push_string("NEO4J_GRACEFUL_SHUTDOWN_TIMEOUT");
+        l.push_string("NEO4J_CONNECTION_TIMEOUT");
         l.push_number(DEFAULT_WORKER_THREADS);
         l.create_table(2, 0);
         {

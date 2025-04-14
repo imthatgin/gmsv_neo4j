@@ -1,56 +1,55 @@
+use gmod::LuaReg;
+use gmod::LuaString;
+use gmod::cstring;
 use gmod::gmod13_close;
 use gmod::gmod13_open;
 use gmod::lua;
-
-use logging::LogLevel;
-use logging::log;
+use gmod::lua_regs;
+use gmod::register_lua_rstruct;
+use gmod::rstruct::RStruct;
+use lazy_static::lazy_static;
+use tokio::runtime::Runtime;
 
 use std::ffi::CStr;
-use std::sync::atomic::AtomicBool;
 
 mod api;
-mod logging;
 mod mapping;
-mod neo_client;
 mod runtime;
 
-const NAMESPACE: &CStr = c"neo4j";
-const MT_QUERY: &CStr = c"Neo4jQuery";
+lazy_static! {
+    pub static ref THREAD_WORKER: Runtime = tokio::runtime::Builder::new_multi_thread()
+        .enable_all()
+        .build()
+        .unwrap();
+}
 
-static SUPPRESS_MESSAGES: AtomicBool = AtomicBool::new(false);
+const NAMESPACE: &CStr = c"neo4j";
 
 #[gmod13_open]
-unsafe fn open(l: lua::State) -> i32 {
+unsafe fn gmod13_open(l: lua::State) -> i32 {
     let cargo_name = env!("CARGO_PKG_NAME");
     let cargo_version = env!("CARGO_PKG_VERSION");
 
     runtime::load(l);
 
-    l.new_table();
-    {
-        l.push_string(cargo_version);
-        l.set_field(-2, c"VERSION");
+    let regs = lua_regs! ["Query"=> api::query::new_query, "Graph" => api::graph::new_graph];
 
-        l.push_function(api::query::new_query);
-    }
-    l.set_global(NAMESPACE);
+    l.register(NAMESPACE.as_ptr(), regs.as_ptr());
 
     // Just inform the user that it has been successfully loaded
     let log_message = format!("Module {} ({}) loaded", cargo_name, cargo_version);
-    log(LogLevel::Info, log_message);
 
     0
 }
 
 #[gmod13_close]
-fn close(l: lua::State) -> i32 {
+fn gmod13_close(l: lua::State) -> i32 {
     let cargo_name = env!("CARGO_PKG_NAME");
     let cargo_version = env!("CARGO_PKG_VERSION");
     let log_message = format!(
         "Module '{} ({})' is shutting down",
         cargo_name, cargo_version
     );
-    log(LogLevel::Info, log_message);
 
     runtime::unload(l);
 
