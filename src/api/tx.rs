@@ -1,5 +1,5 @@
+use gmod::{lua, lua_function};
 use neo4rs::{BoltMap, Query, Txn};
-use rglua::lua::{LuaState, lua_newtable, lua_pushnil, lua_rawseti};
 
 use crate::{
     LogLevel, log,
@@ -7,11 +7,12 @@ use crate::{
     neo_client::THREAD_WORKER,
     userdata::{read_userdata_at, read_userdata_owned},
 };
+use anyhow::Result;
 
 /// Executes a query within a transaction.
 /// Will retrieve the entire result set at once.
 #[lua_function]
-pub fn execute(l: LuaState) -> i32 {
+pub fn execute(l: lua::State) -> Result<i32> {
     THREAD_WORKER.block_on(async {
         let mut tx = match read_userdata_owned::<Txn>(l, 1) {
             Ok(tx) => tx,
@@ -81,7 +82,7 @@ pub fn execute(l: LuaState) -> i32 {
 /// Executes a query within a transaction.
 /// Will retrieve the entire result set at once.
 #[lua_function]
-pub fn commit(l: LuaState) -> i32 {
+pub fn commit(l: lua::State) -> i32 {
     let tx = match read_userdata_owned::<Txn>(l, 1) {
         Ok(tx) => tx,
         Err(err) => {

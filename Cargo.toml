@@ -12,10 +12,12 @@ opt-level = 1
 
 [dependencies]
 neo4rs = { version = "0.8.0", features = ["serde_json"] }
-rglua = { version = "3.0.0" }
+anyhow = { version = "1.0.98" }
+gmod = { git = "https://github.com/Srlion/gmod-rs", rev = "a700815" }
 termcolor = "1.4.1"
 futures = "0.3.31"
 tokio = { version = "1.44.2", features = ["full"] }
+tokio-util = { version = "0.7.13", features = ["rt"] }
 lazy_static = "1.5.0"
 serde = { version = "1.0.219", features = ["derive"] }
 
