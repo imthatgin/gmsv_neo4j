@@ -1,13 +1,10 @@
 use gmod::LuaReg;
-use gmod::LuaString;
-use gmod::cstring;
 use gmod::gmod13_close;
 use gmod::gmod13_open;
 use gmod::lua;
 use gmod::lua_regs;
-use gmod::register_lua_rstruct;
-use gmod::rstruct::RStruct;
 use lazy_static::lazy_static;
+use neo4rs::BoltMap;
 use tokio::runtime::Runtime;
 
 use std::ffi::CStr;
@@ -15,6 +12,11 @@ use std::ffi::CStr;
 mod api;
 mod mapping;
 mod runtime;
+
+pub enum NeoThreadMessage {
+    ResultSet(Vec<BoltMap>),
+    CommitTx,
+}
 
 lazy_static! {
     pub static ref THREAD_WORKER: Runtime = tokio::runtime::Builder::new_multi_thread()

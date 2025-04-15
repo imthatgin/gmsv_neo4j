@@ -1,25 +1,24 @@
+use std::sync::Arc;
+
 use anyhow::Error;
 use gmod::rstruct::RStruct;
 use gmod::task_queue::TaskQueue;
 use gmod::{lua, lua_function, register_lua_rstruct};
 use neo4rs::{Config, Graph};
+use tokio::sync::Mutex;
 
 use crate::THREAD_WORKER;
 use crate::api::transaction::LuaNeoTxn;
 
 pub struct LuaNeoGraph {
     pub graph: Graph,
-    pub tasks: TaskQueue,
 }
 
 impl LuaNeoGraph {
     pub fn new(l: lua::State, config: Config) -> anyhow::Result<Self> {
         THREAD_WORKER.block_on(async {
             let graph = Graph::connect(config).await?;
-            Ok(Self {
-                graph,
-                tasks: TaskQueue::new(l),
-            })
+            Ok(Self { graph })
         })
     }
 }
@@ -81,7 +80,7 @@ pub fn new_txn(l: lua::State) -> anyhow::Result<i32> {
     THREAD_WORKER.block_on(async {
         let tx = neo_graph.graph.start_txn().await?;
 
-        l.push_struct::<LuaNeoTxn>(LuaNeoTxn(tx.into()));
+        l.push_struct::<LuaNeoTxn>(LuaNeoTxn(Arc::new(Mutex::new(tx))));
 
         Ok(1)
     })
@@ -96,7 +95,7 @@ pub fn new_txn_on(l: lua::State) -> anyhow::Result<i32> {
     THREAD_WORKER.block_on(async {
         let tx = neo_graph.graph.start_txn_on(db).await?;
 
-        l.push_struct::<LuaNeoTxn>(LuaNeoTxn(tx.into()));
+        l.push_struct::<LuaNeoTxn>(LuaNeoTxn(Arc::new(Mutex::new(tx))));
         Ok(1)
     })
 }

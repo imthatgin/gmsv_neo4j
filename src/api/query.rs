@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use anyhow::Error;
 use gmod::rstruct::RStruct;
 use gmod::{lua, lua_function, register_lua_rstruct};
@@ -5,7 +7,7 @@ use neo4rs::Query;
 
 use crate::mapping::lua_table_to_boltmap;
 
-pub struct LuaNeoQuery(pub Query);
+pub struct LuaNeoQuery(pub Arc<Query>);
 
 register_lua_rstruct!(LuaNeoQuery, c"Neo4jQuery", &[]);
 
@@ -30,7 +32,7 @@ pub fn new_query(l: lua::State) -> anyhow::Result<i32> {
         }
     }
 
-    l.push_struct::<LuaNeoQuery>(LuaNeoQuery(query));
+    l.push_struct::<LuaNeoQuery>(LuaNeoQuery(Arc::new(query)));
 
     Ok(1)
 }

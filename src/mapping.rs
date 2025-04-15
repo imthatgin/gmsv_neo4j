@@ -72,50 +72,48 @@ pub fn lua_table_to_boltmap(l: lua::State, index: i32) -> anyhow::Result<BoltMap
 }
 
 pub fn boltmap_to_lua_table(l: lua::State, map: BoltMap) -> anyhow::Result<()> {
-    l.create_table(map.len() as i32, 0);
+    l.new_table();
     for (key, value) in map.value.iter() {
-        map_type_to_lua(l, value.clone());
-        l.set_field(-2, &cstring(&key.value));
+        l.push_string(&key.value);
+        map_type_to_lua(l, value.clone())?;
+        l.raw_set_table(-3);
     }
 
     Ok(())
 }
 
 pub fn boltlist_to_lua_table(l: lua::State, list: BoltList) -> anyhow::Result<()> {
-    l.create_table(list.len() as i32, 0);
+    l.new_table();
     for (idx, entry) in list.iter().enumerate() {
         let key: isize = idx.try_into()?;
         l.push_number(key + 1);
-        map_type_to_lua(l, entry.clone());
+        map_type_to_lua(l, entry.clone())?;
+        l.raw_set_table(-3);
     }
 
     Ok(())
 }
 
 pub fn map_type_to_lua(l: lua::State, item: BoltType) -> anyhow::Result<()> {
-    l.create_table(0, 0);
     match item {
         BoltType::Integer(v) => v.value.push_to_lua(&l),
         BoltType::Float(v) => v.value.push_to_lua(&l),
         BoltType::Node(v) => {
-            l.create_table(v.properties.len() as i32, -3);
-            boltmap_to_lua_table(l, v.properties.clone());
+            boltmap_to_lua_table(l, v.properties.clone())?;
             return Ok(());
         }
         BoltType::List(v) => {
-            boltlist_to_lua_table(l, v.clone());
+            boltlist_to_lua_table(l, v.clone())?;
             return Ok(());
         }
         BoltType::Relation(v) => {
-            l.create_table(v.properties.len() as i32, -3);
-            boltmap_to_lua_table(l, v.properties.clone());
+            boltmap_to_lua_table(l, v.properties.clone())?;
             return Ok(());
         }
         BoltType::String(v) => l.push_string(&v.value),
         BoltType::Boolean(v) => l.push_boolean(v.value),
         BoltType::Map(v) => {
-            l.create_table(v.len() as i32, -3);
-            boltmap_to_lua_table(l, v.clone());
+            boltmap_to_lua_table(l, v.clone())?;
             return Ok(());
         }
         _ => l.push_nil(),
