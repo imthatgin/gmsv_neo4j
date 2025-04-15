@@ -80,7 +80,7 @@ pub fn new_txn(l: lua::State) -> anyhow::Result<i32> {
     THREAD_WORKER.block_on(async {
         let tx = neo_graph.graph.start_txn().await?;
 
-        l.push_struct::<LuaNeoTxn>(LuaNeoTxn(Arc::new(Mutex::new(tx))));
+        l.push_struct::<LuaNeoTxn>(LuaNeoTxn(Arc::new(Mutex::new(Some(tx)))));
 
         Ok(1)
     })
@@ -95,7 +95,7 @@ pub fn new_txn_on(l: lua::State) -> anyhow::Result<i32> {
     THREAD_WORKER.block_on(async {
         let tx = neo_graph.graph.start_txn_on(db).await?;
 
-        l.push_struct::<LuaNeoTxn>(LuaNeoTxn(Arc::new(Mutex::new(tx))));
+        l.push_struct::<LuaNeoTxn>(LuaNeoTxn(Arc::new(Mutex::new(Some(tx)))));
         Ok(1)
     })
 }
