@@ -2,7 +2,6 @@ use std::sync::Arc;
 
 use anyhow::Error;
 use gmod::rstruct::RStruct;
-use gmod::task_queue::TaskQueue;
 use gmod::{lua, lua_function, register_lua_rstruct};
 use neo4rs::{Config, Graph};
 use tokio::sync::Mutex;
@@ -44,6 +43,7 @@ pub fn new_graph(l: lua::State) -> anyhow::Result<i32> {
         return Err(Error::msg("Last argument must be a table of options"));
     }
 
+    // Parse the rest of the options
     if l.is_table(4) {
         l.get_field(4, c"db");
         if l.is_string(-1) {
@@ -77,6 +77,7 @@ pub fn new_graph(l: lua::State) -> anyhow::Result<i32> {
 pub fn new_txn(l: lua::State) -> anyhow::Result<i32> {
     let neo_graph = l.get_struct::<LuaNeoGraph>(1)?;
 
+    // This is non async but it should be fine
     THREAD_WORKER.block_on(async {
         let tx = neo_graph.graph.start_txn().await?;
 
@@ -92,6 +93,7 @@ pub fn new_txn_on(l: lua::State) -> anyhow::Result<i32> {
 
     let db = l.check_string(2)?;
 
+    // This is non async but it should be fine
     THREAD_WORKER.block_on(async {
         let tx = neo_graph.graph.start_txn_on(db).await?;
 

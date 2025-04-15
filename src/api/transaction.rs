@@ -1,4 +1,3 @@
-use std::ops::Deref;
 use std::sync::Arc;
 
 use gmod::rstruct::RStruct;
@@ -48,10 +47,12 @@ pub fn execute(l: lua::State) -> anyhow::Result<i32> {
                     let deserialized: BoltMap = entry;
                     output.push(deserialized.clone());
                 }
-                Err(err) => println!("{}", err),
+                // Ignore failed deserializations
+                Err(_) => (),
             };
         }
 
+        // Dispatch the callback
         wait_lua_tick(move |l| {
             let _ = l.pcall_func_ref(callback, || {
                 l.new_table();

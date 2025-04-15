@@ -25,6 +25,7 @@ pub fn new_query(l: lua::State) -> anyhow::Result<i32> {
         ));
     }
 
+    // Map parameters
     if l.is_table(2) {
         let table = lua_table_to_boltmap(l, 2)?;
         for (key, value) in table.value {
