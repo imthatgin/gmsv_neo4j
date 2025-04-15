@@ -1,57 +1,59 @@
-extern crate core;
-#[macro_use]
-extern crate rglua;
+use gmod::LuaReg;
+use gmod::gmod13_close;
+use gmod::gmod13_open;
+use gmod::lua;
+use gmod::lua_regs;
+use lazy_static::lazy_static;
+use neo4rs::BoltMap;
+use tokio::runtime::Runtime;
 
-use rglua::lua::LuaState;
-use rglua::prelude::*;
-
-use logging::LogLevel;
-use logging::log;
-
-use std::sync::atomic::{AtomicBool, Ordering};
-
-pub const MT_NEO4J_GRAPH: *const i8 = cstr!("Neo4jGraph");
-pub const MT_NEO4J_TXN: *const i8 = cstr!("Neo4jTransaction");
-pub const MT_NEO4J_QUERY: *const i8 = cstr!("Neo4jQuery");
+use std::ffi::CStr;
 
 mod api;
-mod logging;
-mod lua_state;
 mod mapping;
-mod neo_client;
-mod userdata;
+mod runtime;
 
-static SUPPRESS_MESSAGES: AtomicBool = AtomicBool::new(false);
+pub enum NeoThreadMessage {
+    ResultSet(Vec<BoltMap>),
+    CommitTx,
+}
 
-#[gmod_open]
-unsafe fn open(l: LuaState) -> i32 {
-    // Sets up the lua state (ie. exposing the necessary functions)
-    lua_state::init_luastate(l);
+lazy_static! {
+    pub static ref THREAD_WORKER: Runtime = tokio::runtime::Builder::new_multi_thread()
+        .enable_all()
+        .build()
+        .unwrap();
+}
 
-    // Just inform the user that it has been successfully loaded
+const NAMESPACE: &CStr = c"neo4j";
+
+#[gmod13_open]
+unsafe fn gmod13_open(l: lua::State) -> i32 {
     let cargo_name = env!("CARGO_PKG_NAME");
     let cargo_version = env!("CARGO_PKG_VERSION");
+
+    runtime::load(l);
+
+    let regs = lua_regs! ["Query"=> api::query::new_query, "Graph" => api::graph::new_graph];
+
+    l.register(NAMESPACE.as_ptr(), regs.as_ptr());
+
+    // Just inform the user that it has been successfully loaded
     let log_message = format!("Module {} ({}) loaded", cargo_name, cargo_version);
-    log(LogLevel::Info, log_message);
 
     0
 }
 
-extern "C" fn suppress_messages(l: LuaState) -> i32 {
-    let suppress = lua_toboolean(l, 1) != 0;
-    SUPPRESS_MESSAGES.store(suppress, Ordering::Relaxed);
-    0
-}
-
-#[gmod_close]
-fn close(_l: LuaState) -> i32 {
+#[gmod13_close]
+fn gmod13_close(l: lua::State) -> i32 {
     let cargo_name = env!("CARGO_PKG_NAME");
     let cargo_version = env!("CARGO_PKG_VERSION");
     let log_message = format!(
         "Module '{} ({})' is shutting down",
         cargo_name, cargo_version
     );
-    log(LogLevel::Info, log_message);
+
+    runtime::unload(l);
 
     0
 }
