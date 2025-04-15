@@ -1,3 +1,4 @@
+use std::ops::Deref;
 use std::sync::Arc;
 
 use gmod::rstruct::RStruct;
@@ -13,7 +14,7 @@ pub struct LuaNeoTxn(pub Arc<Mutex<Option<Txn>>>);
 
 register_lua_rstruct!(LuaNeoTxn, c"Neo4jTransaction", &[
     (c"Execute", execute),
-    (c"Commit", commit)
+    (c"Commit", commit),
 ]);
 
 #[lua_function]
