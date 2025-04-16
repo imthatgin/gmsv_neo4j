@@ -34,7 +34,10 @@ unsafe fn gmod13_open(l: lua::State) -> i32 {
 
     runtime::load(l);
 
-    let regs = lua_regs! ["Query"=> api::query::new_query, "Graph" => api::graph::new_graph];
+    let regs = lua_regs! [
+        "Query" => api::query::new_query,
+        "Graph" => api::graph::new_graph
+    ];
 
     l.register(NAMESPACE.as_ptr(), regs.as_ptr());
 
