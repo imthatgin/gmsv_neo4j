@@ -1,6 +1,6 @@
 use anyhow::{Error, anyhow};
 use gmod::{
-    LUA_TBOOLEAN, LUA_TNUMBER, LUA_TSTRING, LUA_TTABLE, cstring,
+    LUA_TBOOLEAN, LUA_TNUMBER, LUA_TSTRING, LUA_TTABLE,
     lua::{self},
     push_to_lua::PushToLua,
 };
@@ -140,49 +140,49 @@ pub fn lua_table_to_boltlist(l: lua::State, index: i32) -> anyhow::Result<BoltLi
     Ok(list)
 }
 
-pub fn boltmap_to_lua_table(l: lua::State, map: BoltMap) -> anyhow::Result<()> {
+pub fn boltmap_to_lua_table(l: lua::State, map: &BoltMap) -> anyhow::Result<()> {
     l.new_table();
     for (key, value) in map.value.iter() {
         l.push_string(&key.value);
-        map_type_to_lua(l, value.clone())?;
+        map_type_to_lua(l, value)?;
         l.raw_set_table(-3);
     }
 
     Ok(())
 }
 
-pub fn boltlist_to_lua_table(l: lua::State, list: BoltList) -> anyhow::Result<()> {
+pub fn boltlist_to_lua_table(l: lua::State, list: &BoltList) -> anyhow::Result<()> {
     l.new_table();
     for (idx, entry) in list.iter().enumerate() {
         let key: isize = idx.try_into()?;
         l.push_number(key + 1);
-        map_type_to_lua(l, entry.clone())?;
+        map_type_to_lua(l, entry)?;
         l.raw_set_table(-3);
     }
 
     Ok(())
 }
 
-pub fn map_type_to_lua(l: lua::State, item: BoltType) -> anyhow::Result<()> {
+pub fn map_type_to_lua(l: lua::State, item: &BoltType) -> anyhow::Result<()> {
     match item {
         BoltType::Integer(v) => v.value.push_to_lua(&l),
         BoltType::Float(v) => v.value.push_to_lua(&l),
         BoltType::Node(v) => {
-            boltmap_to_lua_table(l, v.properties.clone())?;
+            boltmap_to_lua_table(l, &v.properties)?;
             return Ok(());
         }
         BoltType::List(v) => {
-            boltlist_to_lua_table(l, v.clone())?;
+            boltlist_to_lua_table(l, v)?;
             return Ok(());
         }
         BoltType::Relation(v) => {
-            boltmap_to_lua_table(l, v.properties.clone())?;
+            boltmap_to_lua_table(l, &v.properties)?;
             return Ok(());
         }
         BoltType::String(v) => l.push_string(&v.value),
         BoltType::Boolean(v) => l.push_boolean(v.value),
         BoltType::Map(v) => {
-            boltmap_to_lua_table(l, v.clone())?;
+            boltmap_to_lua_table(l, v)?;
             return Ok(());
         }
         _ => l.push_nil(),

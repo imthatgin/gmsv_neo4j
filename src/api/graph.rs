@@ -14,7 +14,7 @@ pub struct LuaNeoGraph {
 }
 
 impl LuaNeoGraph {
-    pub fn new(l: lua::State, config: Config) -> anyhow::Result<Self> {
+    pub fn new(config: Config) -> anyhow::Result<Self> {
         THREAD_WORKER.block_on(async {
             let graph = Graph::connect(config).await?;
             Ok(Self { graph })
@@ -68,7 +68,7 @@ pub fn new_graph(l: lua::State) -> anyhow::Result<i32> {
     }
 
     let config = config.build()?;
-    l.push_struct::<LuaNeoGraph>(LuaNeoGraph::new(l, config)?);
+    l.push_struct::<LuaNeoGraph>(LuaNeoGraph::new(config)?);
 
     Ok(1)
 }

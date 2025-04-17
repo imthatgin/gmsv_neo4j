@@ -43,6 +43,7 @@ unsafe fn gmod13_open(l: lua::State) -> i32 {
 
     // Just inform the user that it has been successfully loaded
     let log_message = format!("Module {} ({}) loaded", cargo_name, cargo_version);
+    println!("{}", log_message);
 
     0
 }
@@ -55,6 +56,7 @@ fn gmod13_close(l: lua::State) -> i32 {
         "Module '{} ({})' is shutting down",
         cargo_name, cargo_version
     );
+    println!("{}", log_message);
 
     runtime::unload(l);
 

@@ -57,7 +57,7 @@ pub fn execute(l: lua::State) -> anyhow::Result<i32> {
             let _ = l.pcall_func_ref(callback, || {
                 l.new_table();
                 for (i, item) in output.iter().enumerate() {
-                    if let Err(err) = boltmap_to_lua_table(l, item.clone()) {
+                    if let Err(err) = boltmap_to_lua_table(l, item) {
                         println!("Could not convert boltmap: {}", err);
                         continue;
                     };
