@@ -7,7 +7,7 @@ use gmod::{
 
 use neo4rs::{BoltBoolean, BoltFloat, BoltInteger, BoltList, BoltMap, BoltString, BoltType};
 
-unsafe fn get_table_key(l: lua::State, key_type: i32) -> anyhow::Result<String> {
+unsafe fn get_table_key(l: &lua::State, key_type: i32) -> anyhow::Result<String> {
     if key_type == LUA_TSTRING {
         let key = l.check_string(-2)?;
         return Ok(key);
@@ -59,7 +59,7 @@ pub fn lua_table_to_boltmap(l: lua::State, index: i32) -> anyhow::Result<BoltMap
         while l.next(index) != 0 {
             let key_type = l.lua_type(-2);
 
-            let key = get_table_key(l, key_type)?;
+            let key = get_table_key(&l, key_type)?;
             let key = BoltString::from(key);
 
             let value_type = l.lua_type(-1);
@@ -155,7 +155,7 @@ pub fn boltlist_to_lua_table(l: lua::State, list: &BoltList) -> anyhow::Result<(
     l.new_table();
     for (idx, entry) in list.iter().enumerate() {
         let key: isize = idx.try_into()?;
-        l.push_number(key + 1);
+        l.raw_push_number((key + 1) as f64);
         map_type_to_lua(l, entry)?;
         l.raw_set_table(-3);
     }
