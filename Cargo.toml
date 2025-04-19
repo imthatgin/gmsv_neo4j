@@ -1,7 +1,7 @@
 [package]
 name = "gmsv_neo4j"
 description = "Neo4j integration for Garry's Mod servers"
-version = "0.1.2"
+version = "0.1.3"
 edition = "2024"
 
 [lib]
